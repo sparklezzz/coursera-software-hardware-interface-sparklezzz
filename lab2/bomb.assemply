@@ -418,7 +418,7 @@ Disassembly of section .text:
   400f84:	48 89 5c 24 f0       	mov    %rbx,-0x10(%rsp)
   400f89:	48 89 6c 24 f8       	mov    %rbp,-0x8(%rsp)
   400f8e:	48 83 ec 18          	sub    $0x18,%rsp
-  400f92:	89 fb                	mov    %edi,%ebx # %ebx = %edi = 0
+  400f92:	89 fb                	mov    %edi,%ebx # %ebx = %edi
   400f94:	b8 01 00 00 00       	mov    $0x1,%eax # %eax = 1
   400f99:	83 ff 01             	cmp    $0x1,%edi
   400f9c:	7e 14                	jle    400fb2 <func4+0x2e> # if %edi <= 1, return
@@ -485,51 +485,51 @@ Disassembly of section .text:
   40106e:	c3                   	retq   
 
 000000000040106f <fun6>:
-  40106f:	4c 8b 47 08          	mov    0x8(%rdi),%r8
-  401073:	48 c7 47 08 00 00 00 	movq   $0x0,0x8(%rdi)
+  40106f:	4c 8b 47 08          	mov    0x8(%rdi),%r8 # n4 = n3.next
+  401073:	48 c7 47 08 00 00 00 	movq   $0x0,0x8(%rdi) # n3.next = NULL
   40107a:	00 
   40107b:	48 89 f8             	mov    %rdi,%rax
-  40107e:	48 89 f9             	mov    %rdi,%rcx
-  401081:	4d 85 c0             	test   %r8,%r8
+  40107e:	48 89 f9             	mov    %rdi,%rcx # n2 = n3
+  401081:	4d 85 c0             	test   %r8,%r8 # if (n4 == NULL) exit fun6(because only one element)
   401084:	75 40                	jne    4010c6 <fun6+0x57>
   401086:	48 89 f8             	mov    %rdi,%rax
   401089:	c3                   	retq   
-  40108a:	48 89 d1             	mov    %rdx,%rcx
-  40108d:	48 8b 51 08          	mov    0x8(%rcx),%rdx
-  401091:	48 85 d2             	test   %rdx,%rdx
+  40108a:	48 89 d1             	mov    %rdx,%rcx # n2 = n1
+  40108d:	48 8b 51 08          	mov    0x8(%rcx),%rdx # n1 = n2->next
+  401091:	48 85 d2             	test   %rdx,%rdx # if (n1 == null) jump to 40109f
   401094:	74 09                	je     40109f <fun6+0x30>
-  401096:	39 32                	cmp    %esi,(%rdx)
+  401096:	39 32                	cmp    %esi,(%rdx) # if(*n1 > curVal) jump back to 40108a
   401098:	7f f0                	jg     40108a <fun6+0x1b>
-  40109a:	48 89 cf             	mov    %rcx,%rdi
+  40109a:	48 89 cf             	mov    %rcx,%rdi # n3 = n2
   40109d:	eb 03                	jmp    4010a2 <fun6+0x33>
-  40109f:	48 89 cf             	mov    %rcx,%rdi
-  4010a2:	48 39 d7             	cmp    %rdx,%rdi
+  40109f:	48 89 cf             	mov    %rcx,%rdi # n3 = n2
+  4010a2:	48 39 d7             	cmp    %rdx,%rdi # if (n3 == n1) jump to 4010ad
   4010a5:	74 06                	je     4010ad <fun6+0x3e>
-  4010a7:	4c 89 47 08          	mov    %r8,0x8(%rdi)
+  4010a7:	4c 89 47 08          	mov    %r8,0x8(%rdi) # n3.next = n4 
   4010ab:	eb 03                	jmp    4010b0 <fun6+0x41>
   4010ad:	4c 89 c0             	mov    %r8,%rax
-  4010b0:	49 8b 48 08          	mov    0x8(%r8),%rcx
-  4010b4:	49 89 50 08          	mov    %rdx,0x8(%r8)
+  4010b0:	49 8b 48 08          	mov    0x8(%r8),%rcx # n2 = n4.next
+  4010b4:	49 89 50 08          	mov    %rdx,0x8(%r8) # n4.next = n1
   4010b8:	48 85 c9             	test   %rcx,%rcx
   4010bb:	74 1a                	je     4010d7 <fun6+0x68>
-  4010bd:	49 89 c8             	mov    %rcx,%r8
+  4010bd:	49 89 c8             	mov    %rcx,%r8 # n4 = n2
   4010c0:	48 89 c1             	mov    %rax,%rcx
   4010c3:	48 89 c7             	mov    %rax,%rdi
-  4010c6:	48 89 ca             	mov    %rcx,%rdx
+  4010c6:	48 89 ca             	mov    %rcx,%rdx # n1 = n2
   4010c9:	48 85 c9             	test   %rcx,%rcx
   4010cc:	74 d4                	je     4010a2 <fun6+0x33>
-  4010ce:	41 8b 30             	mov    (%r8),%esi
-  4010d1:	39 31                	cmp    %esi,(%rcx)
+  4010ce:	41 8b 30             	mov    (%r8),%esi # curVal = *n4
+  4010d1:	39 31                	cmp    %esi,(%rcx) # if (*n2 > curVal) jump back to 40108a
   4010d3:	7f b8                	jg     40108d <fun6+0x1e>
   4010d5:	eb cb                	jmp    4010a2 <fun6+0x33>
   4010d7:	f3 c3                	repz retq 
 
 00000000004010d9 <phase_6>:
   4010d9:	48 83 ec 08          	sub    $0x8,%rsp
-  4010dd:	ba 0a 00 00 00       	mov    $0xa,%edx
-  4010e2:	be 00 00 00 00       	mov    $0x0,%esi
+  4010dd:	ba 0a 00 00 00       	mov    $0xa,%edx # base = 10 for strtol function
+  4010e2:	be 00 00 00 00       	mov    $0x0,%esi # the ptr to store invalid character, set to null
   4010e7:	e8 94 fa ff ff       	callq  400b80 <strtol@plt>
-  4010ec:	89 05 8e 16 20 00    	mov    %eax,0x20168e(%rip)        # 602780 <node0>
+  4010ec:	89 05 8e 16 20 00    	mov    %eax,0x20168e(%rip)        # 602780 <node0>, the address of the node, put the result from strtol in to node.val
   4010f2:	bf 80 27 60 00       	mov    $0x602780,%edi
   4010f7:	e8 73 ff ff ff       	callq  40106f <fun6>
   4010fc:	48 8b 40 08          	mov    0x8(%rax),%rax
@@ -539,6 +539,7 @@ Disassembly of section .text:
   40110e:	39 10                	cmp    %edx,(%rax)
   401110:	74 05                	je     401117 <phase_6+0x3e>
   401112:	e8 26 05 00 00       	callq  40163d <explode_bomb>
+  printf("%x %x %x ", x, y, z);
   401117:	48 83 c4 08          	add    $0x8,%rsp
   40111b:	c3                   	retq   
 
