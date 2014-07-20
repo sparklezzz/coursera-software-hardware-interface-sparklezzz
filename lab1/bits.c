@@ -120,7 +120,7 @@ NOTES:
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
-  return 2;
+  return ~((~x) | (~y));
 }
 /* 
  * bitXor - x^y using only ~ and & 
@@ -130,7 +130,7 @@ int bitAnd(int x, int y) {
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+  return ~((~(x&(~y))) & (~((~x)&y))) ;
 }
 /* 
  * thirdBits - return word with every third bit (starting from the LSB) set to 1
@@ -140,7 +140,11 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int thirdBits(void) {
-  return 2;
+  int a = 0x49;		// 1001001
+  int b = (a<<9) | a;	// 1001001001001001
+  int c = (b<<9) | a;	// 1001001001001001001001001
+  int d = (c<<6) | 0x9;	// 1001001001001001001001001001001
+  return d;
 }
 // Rating: 2
 /* 
@@ -153,7 +157,12 @@ int thirdBits(void) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-  return 2;
+  int x_high_extend = x >> 31;
+  int n_minus_one = n + ((~1) + 1);
+  /*  
+  * The fake significant part should accord with true significant part
+  */ 
+  return !((x >> n_minus_one) ^ x_high_extend);
 }
 /* 
  * sign - return 1 if positive, 0 if zero, and -1 if negative
@@ -164,7 +173,14 @@ int fitsBits(int x, int n) {
  *  Rating: 2
  */
 int sign(int x) {
-  return 2;
+  int highest_bit_extend = x >> 31;
+  int is_positive = !((highest_bit_extend & 0x1) | (!x));
+  /*
+  * when x > 0: highest_bit_extend = 0, is_postive = 1
+  * when x = 0: highest_bit_extend = 0, is_positive = 0
+  * when x < 0: highest_bit_extend = 0xffffffff, is_positive = 0
+  */
+  return highest_bit_extend + is_positive;
 }
 /* 
  * getByte - Extract byte n from word x
@@ -175,7 +191,7 @@ int sign(int x) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-  return 2;
+  return (x >> (n << 3)) & 0xff;
 }
 // Rating: 3
 /* 
@@ -187,7 +203,20 @@ int getByte(int x, int n) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-  return 2;
+  /*
+  * if n = 0, left fullmask = 0
+  * if n != 0, left fullmask = 0xffffffff
+  */
+  int fullmask = ((!!n) << 31) >> 31;
+  int x_normal_shift_right = x >> n;
+
+// n = 0: (x >> n) & 0xffffffff
+  int res1 = (~fullmask) & x_normal_shift_right;
+  
+  // n > 0: (x >> n) & ((1 << (32-n)) - 1)
+  int res2 = fullmask & x_normal_shift_right & ((1 << (33+(~n))) + ((~1)+1));
+
+  return res1 | res2;
 }
 /* 
  * addOK - Determine if can compute x+y without overflow
@@ -198,7 +227,15 @@ int logicalShift(int x, int n) {
  *   Rating: 3
  */
 int addOK(int x, int y) {
-  return 2;
+  int x_negative = (x >> 31) & 0x1;
+  int y_negative = (y >> 31) & 0x1;
+  int fake_sum = x + y;
+  int sum_negative = (fake_sum >> 31) & 0x1;
+  /*
+  * x and y have different sign: OK
+  * x and y have same sign: see if x and x+y have same sign
+  */
+  return ((x_negative ^ y_negative)) | (!((x_negative ^ y_negative) | (x_negative ^ sum_negative)));
 }
 // Rating: 4
 /* 
@@ -209,7 +246,12 @@ int addOK(int x, int y) {
  *   Rating: 4 
  */
 int bang(int x) {
-  return 2;
+  int a = x | (x >> 16);
+  int b = a | (a >> 8);
+  int c = b | (b >> 4);
+  int d = c | (c >> 2);
+  int e = d | (d >> 1);
+  return ~e & 0x1 ;
 }
 // Extra Credit: Rating: 3
 /* 
@@ -220,6 +262,19 @@ int bang(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
+  /*
+  * if x = 0, left fullmask = 0
+  * if x != 0, left fullmask = 0xffffffff
+  */
+  int fullmask = ((!!x) << 31) >> 31;
+
+  // x = 0:
+  int res1 = (~fullmask) & z;
+  
+  // x != 0:
+  int res2 = fullmask & y;
+
+  return res1 | res2;
   return 2;
 }
 // Extra Credit: Rating: 4
@@ -232,5 +287,9 @@ int conditional(int x, int y, int z) {
  *   Rating: 4
  */
 int isPower2(int x) {
-  return 2;
+  int is_positive = !(((x >> 31) & 0x1) | !x);
+  int x_minus_one = x + ((~1) + 1);
+  int trick = x & x_minus_one;
+  int trick_zero = !trick;
+  return is_positive & trick_zero;
 }

@@ -85,8 +85,9 @@ int intSize() {
   int * intPtr1;
   int * intPtr2;
   // TODO: Write code to compute size of an integer.
-
-  return 2;
+  intPtr1 = intArray;
+  intPtr2 = intArray + 10;
+  return ((char*)intPtr2 - (char*)intPtr1) / 10;
 }
 
 /*
@@ -97,8 +98,9 @@ int doubleSize() {
   double * doubPtr1;
   double * doubPtr2;
   // TODO: Write code to compute size of a double.
-
-  return 2;
+  doubPtr1 = doubArray;
+  doubPtr2 = doubArray + 10;
+  return ((char*)doubPtr2 - (char*)doubPtr1) / 10;
 }
 
 /*
@@ -109,8 +111,9 @@ int pointerSize() {
   double ** ptrPtr1;
   double ** ptrPtr2;
   // TODO: Write code to compute size of a pointer.
-
-  return 2;
+  ptrPtr1 = ptrArray;
+  ptrPtr2 = ptrArray + 10;
+  return ((char*)ptrPtr2 - (char*)ptrPtr1) / 10;
 }
 
 /*
@@ -123,6 +126,7 @@ int changeValue() {
   int * intPtr2;
   // TODO: Write code to change value of intArray[5] to 351 using only
   //       intPtr1 and the + operator.
+  *(intPtr1+5) = 351;
 
   return intArray[5];
 }
@@ -135,8 +139,9 @@ int changeValue() {
  * Operators / and % and loops are NOT allowed.
  */
 int withinSameBlock(int * ptr1, int * ptr2) {
-  // TODO
-  return 2;
+  int blkIdx1 = ((int)ptr1) >> 6;
+  int blkIdx2 = ((int)ptr2) >> 6;
+  return blkIdx1 == blkIdx2;
 }
 
 /*
@@ -145,7 +150,16 @@ int withinSameBlock(int * ptr1, int * ptr2) {
  */
 int withinArray(int * intArray, int size, int * ptr) {
   // TODO
-  return 2;
+  int offset = ptr - intArray;
+  // are we not allowed to use binary '&', '|' and unary '!' ?
+  // offset should be non-negative
+  int is_offset_non_negative = (~(offset >> 31)) & 0x1;
+
+  // offset should be less than size
+  int diff = offset - size;
+  int is_diff_negative = (diff >> 31) & 0x1;
+
+  return is_offset_non_negative & is_diff_negative;
 }
 /*
  * Return x with the n bits that begin at position p inverted (i.e.,
@@ -154,5 +168,7 @@ int withinArray(int * intArray, int size, int * ptr) {
  */
 int invert(int x, int p, int n) {
   // TODO
-  return 2;
+  int y = (((~0) >> p) << p);
+  int z = (((~0) >> (p+n)) << (p+n));
+  return x ^ y ^ z;
 }
