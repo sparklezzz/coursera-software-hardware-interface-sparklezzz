@@ -1,0 +1,102 @@
+phase_2：a1 = a4, a2 = a5, a3 = a6 is OK
+phase_3：switch：8 candidate answers：
+0  535 or 1 926 or 2 214 or 3 339 or 4 119 or 5 352 or 6 919 or 7 412
+note that $rax and $eax most of the times are referred to the same var
+a1 = 0xc($rbp) a2 = 0x8($rbp)
+phase_4：fabonacci  f(9) = 55 = 0x37
+phase_5:，inverse(var a1) 0f <- 06 <- 0e <- 02 <- 01 <- 0a <- 00 <- 08 <- 04 <- 09 <- 0d <- 0b <- 07 <- 03 <- 0c <- 05 (<- 0f)
+accumulated sum(var a2)：15 <- 21 <- 35 <- 37 <- 38 <- 48 <- 48 <- 56 <- 60 <- 69 <- 82 <- 93 <- 100 <- 103 <- 115 <- 120
+
+phase_6: sort linked list
+(1)long int strtol(const char *nptr, char **endptr, int base); where base = 10 = 0xa = 
+(2)subfunc: fun6 return the head of the node in $rax
+(3)mov    0x8(%rax),%rax # node = node -> next
+(4)code for compare node:
+  40108a:       48 89 d1                mov    %rdx,%rcx
+  40108d:       48 8b 51 08             mov    0x8(%rcx),%rdx
+  401091:       48 85 d2                test   %rdx,%rdx
+  401094:       74 09                   je     40109f <fun6+0x30>
+  401096:       39 32                   cmp    %esi,(%rdx)
+  401098:       7f f0                   jg     40108a <fun6+0x1b>
+  40109a:       48 89 cf                mov    %rcx,%rdi
+  40109d:       eb 03                   jmp    4010a2 <fun6+0x33>
+  40109f:       48 89 cf                mov    %rcx,%rdi
+  4010a2:       48 39 d7                cmp    %rdx,%rdi
+  4010a5:       74 06                   je     4010ad <fun6+0x3e>
+  4010a7:       4c 89 47 08             mov    %r8,0x8(%rdi)
+(5)mov    %eax,0x20168e(%rip) #put result strtol from into node.val
+(6) restore original linked list, unsorted
+node at 0x602780: node->next = 0x602790 node->val = 0(override by strtol)
+node at 0x602790: node->next = 0x6027a0 node->val = 374
+node at 0x6027a0: node->next = 0x6027b0 node->val = 826
+node at 0x6027b0: node->next = 0x6027c0 node->val = 370
+node at 0x6027c0: node->next = 0x6027d0 node->val = 782
+
+node at 0x6027d0: node->next = 0x6027e0 node->val = 488
+node at 0x6027e0: node->next = 0x6027f0 node->val = 673
+node at 0x6027f0: node->next = 0x602800 node->val = 286
+node at 0x602800: node->next = 0x602810 node->val = 600
+node at 0x6027d0: node->next = 0x0 node->val = 529
+(7) after descent sort
+826 782 673 600 529 488 374 370 286
+
+secret_phase: in phase_defused function
+(1)How to find: use breakpoint debugging of gdb to find that address 0x603030 is the address of input string of phase_4. Add “austinpowers” (find in 0x401eca) as 4th input string’s second parameter.
+(2)
+0x6025a0: 36
+fun7 should return 3, it’s input is ptr:0x6025a0 in edi, and esi = ebx = eax = strtol(secret_phase_input_string)
+we need strtol(input) - 1 <= 0x3e8 
+
+global eax = esi - 1;
+fun7 (int *ptr, int &esi) {
+	if (ptr == NULL) return -1;
+	int y = *ptr;
+	if (y <= esi) {	// esi >= y
+		eax = 0;
+		if (y == esi) {
+			return eax;
+		} else {
+			ptr = ptr->right;
+			res = fun7(ptr, esi);
+			eax = eax + eax * 1 + 1;
+			return eax;
+		}
+	} else {
+		ptr = ptr->left;
+		eax += fun7(ptr, esi);
+		return eax;
+	}
+}
+Since the result is 3, we trackback from it:
+3 = 2 * 1 + 1 = 2 * (2 * 0 + 1) + 1
+So we know that the path in the tree is: root -> right -> right
+
+(3) binary tree of ptr: 
+layer 0:
+0x6025a0: 36 -> 0x6025c0 + 0x6025e0
+layer 1:
+0x6025c0: 8 -> 0x602640 + 0x602600
+0x6025e0: 50 -> 0x602620 + 0x602660
+layer 2:
+0x602640: 6 -> 0x6026a0 + 0x602700
+0x602600: 22 -> 0x602720 + 0x6026e0
+0x602620: 45 -> 0x602680 + 0x602740
+0x602660: 107 -> 0x6026c0 + 0x602760
+layer 3: last layer!
+0x6026a0: 1 -> NULL + NULL
+0x602700: 7-> NULL + NULL
+0x602720: 20 -> NULL + NULL
+0x6026e0: 35
+0x602680: 40
+0x602740: 47
+0x6026c0: 99
+0x602760: 1001
+actually, it is a binary search tree!!!
+
+                36
+        /                 \
+       8                  50
+   /       \          /         \
+  6        22        45        107
+ /  \    /    \    /    \    /      \
+1   7   20    35  40    47  99     1001
