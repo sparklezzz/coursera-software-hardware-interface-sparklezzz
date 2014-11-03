@@ -188,6 +188,13 @@ static void coalesceFreeBlock(BlockInfo* oldBlock) {
     size_t size = SIZE(*((size_t*)POINTER_SUB(blockCursor, WORD_SIZE)));
     // Use this size to find the block info for that block.
     freeBlock = (BlockInfo*)POINTER_SUB(blockCursor, size);
+
+    // my code for checking consistency of cur block's TAG_USED
+    // and following block's TAG_PRECEDING_USED
+    if ((freeBlock->sizeAndTags & TAG_USED) == TAG_USED) {
+      fprintf (stderr, "Oops! inconsistency in coalesce %p and %p!\n", freeBlock, blockCursor);
+    } 
+
     // Remove that block from free list.
     removeFreeBlock(freeBlock);
 
@@ -345,7 +352,51 @@ void* mm_malloc (size_t size) {
   // Implement mm_malloc.  You can change or remove any of the above
   // code.  It is included as a suggestion of where to start.
   // You will want to replace this return statement...
-  return NULL; }
+ 
+  // Search the free list for a fit
+  ptrFreeBlock = searchFreeList(reqSize);
+ 
+  // No fit found. Get more memory
+  if (ptrFreeBlock == NULL) {
+    requestMoreSpace(reqSize);
+    ptrFreeBlock = searchFreeList(reqSize);
+  }
+
+  // place the acquired block and split excessive part as needed
+  removeFreeBlock(ptrFreeBlock);
+
+  blockSize = SIZE(ptrFreeBlock->sizeAndTags);
+  precedingBlockUseTag = ptrFreeBlock->sizeAndTags & TAG_PRECEDING_USED;
+
+  if (blockSize - reqSize >= MIN_BLOCK_SIZE) {
+    size_t newFreeBlockSize = blockSize - reqSize;
+
+    BlockInfo *newPtrFreeBlock = (BlockInfo*)POINTER_ADD(ptrFreeBlock, reqSize);
+    newPtrFreeBlock->sizeAndTags = newFreeBlockSize | TAG_PRECEDING_USED;	// !TAG_USED
+
+    // update the boundary tag
+    *((size_t*)POINTER_ADD(newPtrFreeBlock, newFreeBlockSize - WORD_SIZE)) = 
+            newFreeBlockSize | TAG_PRECEDING_USED;	// !TAG_USED
+    // insert the new free block into free list
+    insertFreeBlock(newPtrFreeBlock);
+
+    blockSize = reqSize;
+  } else {
+    // do not need to split the block, but need to update the status of following block
+    BlockInfo *followingBlock = (BlockInfo*)POINTER_ADD(ptrFreeBlock, blockSize);
+    size_t followingBlockSize = SIZE(followingBlock->sizeAndTags);
+    size_t followingBlockUsed = followingBlock->sizeAndTags & TAG_USED;
+    followingBlock->sizeAndTags = followingBlockSize | TAG_PRECEDING_USED | followingBlockUsed;
+    if (followingBlockUsed != TAG_USED) {
+      *((size_t*)POINTER_ADD(followingBlock, followingBlockSize - WORD_SIZE)) = followingBlock->sizeAndTags; 
+    }
+  }
+
+  ptrFreeBlock->sizeAndTags = blockSize | precedingBlockUseTag | TAG_USED;
+  // we do not care about the boundary tag of used block!
+
+  return POINTER_ADD(ptrFreeBlock, WORD_SIZE); 
+}
 
 /* Free the block referenced by ptr. */
 void mm_free (void *ptr) {
@@ -355,7 +406,27 @@ void mm_free (void *ptr) {
 
   // Implement mm_free.  You can change or remove the declaraions
   // above.  They are included as minor hints.
+  blockInfo = (BlockInfo*)POINTER_SUB(ptr, WORD_SIZE);
+  payloadSize = SIZE(blockInfo->sizeAndTags);
+  followingBlock = (BlockInfo*)POINTER_ADD(blockInfo, payloadSize);
 
+  // update the status in the current block: reset TAG_USED in both head and boundary tag
+  size_t precedingBlockUseTag = blockInfo->sizeAndTags & TAG_PRECEDING_USED;
+  blockInfo->sizeAndTags = payloadSize | precedingBlockUseTag;
+  *((size_t*)POINTER_ADD(blockInfo, payloadSize - WORD_SIZE)) = payloadSize | precedingBlockUseTag;
+
+  // update the status in the following block: reset TAG_PRECEDING_USED
+  size_t followingBlockSize = SIZE(followingBlock->sizeAndTags);
+  size_t followingBlockUsed = followingBlock->sizeAndTags & TAG_USED;
+  followingBlock->sizeAndTags = followingBlockSize | followingBlockUsed;
+  // if the following block is free, also update its boundary tag
+  if ((followingBlock->sizeAndTags & TAG_USED) != TAG_USED) {
+    *((size_t*)POINTER_ADD(followingBlock, followingBlockSize - WORD_SIZE)) = followingBlock->sizeAndTags;
+  }
+
+  insertFreeBlock(blockInfo);
+  coalesceFreeBlock(blockInfo);
+  
 }
 
 /* Print the heap by iterating through it as an implicit free list. */
@@ -390,4 +461,30 @@ static void examine_heap() {
 // Implement a heap consistency checker as needed.
 int mm_check() {
   return 0;
+}
+
+// Unchecked
+void* mm_realloc(void* ptr, size_t size) {
+  if (ptr == NULL) {
+    return mm_malloc(size);
+  }
+  else if (ptr != NULL && size == 0) {
+    free(ptr);
+    return NULL;
+  } else {
+    void *newPtr = mm_malloc(size);
+    
+    BlockInfo *oldBlock = (BlockInfo*)POINTER_SUB(ptr, WORD_SIZE);
+    size_t oldBlockSize = oldBlock->sizeAndTags;
+    size_t oldDataSize = oldBlockSize - WORD_SIZE;
+    size_t sizeToCopy = size < oldDataSize ? size : oldDataSize;
+    size_t i;
+    // assume size to be copies is the multiple of WORD_SIZE
+    for (i = 0; i < sizeToCopy; ++i) {
+      *(char*)newPtr = *(char*)ptr;       
+    }
+
+    free(ptr);
+    return newPtr;
+  }
 }

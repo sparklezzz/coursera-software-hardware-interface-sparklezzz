@@ -1,0 +1,11 @@
+b *0x400da8
+b *0x400db1
+#run -u 7717367 < smoke.bytes
+run -u 7717367 < smoke.bytes
+
+
+local addr: 0x7fffffffbc68
+
+bp: (void *) 0x7fffffffbc50
+buf addr: 0x7fffffffbc20
+

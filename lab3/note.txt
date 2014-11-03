@@ -1,0 +1,40 @@
+My cookie: 0x384e1de7459dacae
+
+Level 0: Candle & Level 1: Sparkler
+Just focus on the following points.
+stack structure of function of test and getbuf:
+
+address: growing to lower address
+
+0x7fffffffbc38: address of variable 'local=0xdeadbeef', should be changed to cookie val
+0x7fffffffbc40
+0x7fffffffbc58: 0x400ef3 # return address of getbuf, should be changed to 0x4010c0 --address of smoke(same with fizz, 0x401070)
+0x7fffffffbc50: 0x7fffffffbc80 # $rbp of test, do not need to be kept!
+0x7fffffffbc48:
+.
+.
+.
+0x7fffffffbc20: rsp, also the start address of buf
+
+
+Level 2: Firecracker
+
+useful commands:
+as -o bang_part.o bang_part.s
+objdump -d bang_part.o > bang_part.disassembly
+
+address of function bang: 0x401020
+address of variable "global_value": 602308 <global_value>
+
+address of variable "local": 0x7fffffffb1a8
+value of ebp in function getbuf: 0x7fffffffb190
+*(long*)ebp: 0x7fffffffb1c0, old ebp val
+value of esp in function getbuf: 0x7fffffffb160, which is also the address of buf
+
+
+Level 3: Dynamite
+as -o dynamite_part.o dynamite_part.s
+objdump -d dynamite_part.o > dynamite_part.disassemply
+
+This time, $rbp of test is need to be kept: 0x7fffffffb1c0, stored in address 0x7fffffffb190
+

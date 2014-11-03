@@ -39,8 +39,17 @@ mystery3:
 */
 int get_block_size(void) {
   /* YOUR CODE GOES HERE */
-
-  return -1;
+  addr_t i;
+  flush_cache();
+  access_cache(0);
+  i = 1;
+  while (TRUE) { // focus on one block
+    if (!access_cache(i)) { // break if we step over this block
+      break;
+    }
+    i++;
+  }
+  return i;
 }
 
 /*
@@ -49,7 +58,24 @@ int get_block_size(void) {
 int get_cache_size(int size) {
   /* YOUR CODE GOES HERE */
 
-  return -1;
+  addr_t block_size = size;
+  addr_t cache_size = block_size;
+  while (TRUE) {
+    flush_cache();
+    access_cache(0);
+    //access_cache(cache_size);
+    addr_t i = block_size;
+    while (i <= cache_size) { // fulfill the cache. we need this loop to evade the influence of multi-associality
+      access_cache(i);
+      i += block_size;
+    }
+    //printf("%llu\n", cache_size);
+    if (!access_cache(0)) { // initial cached block is retired
+      break;
+    }
+    cache_size <<= 1;
+  }  
+  return cache_size;
 }
 
 /*
@@ -57,8 +83,21 @@ int get_cache_size(int size) {
 */
 int get_cache_assoc(int size) {
   /* YOUR CODE GOES HERE */
-
-  return -1;
+  int cache_size = size;
+  int assoc = 1;
+  while (TRUE) {
+    flush_cache();
+    access_cache(0);
+    int i;
+    for (i=1; i<=assoc; ++i) {
+      access_cache(cache_size * i);
+    }
+    if (!access_cache(0)) { // first block is retired
+      break;
+    }
+    assoc <<= 1;
+  }
+  return assoc;
 }
 
 //// DO NOT CHANGE ANYTHING BELOW THIS POINT

@@ -1,0 +1,18 @@
+memlib.h/.c: provide and virtual heap environment, using system's malloc and free.
+
+Block structure is different from that in the textbook os CSAPP.
+
+Implicit free linked list: do not have prev or next pointer, the info of next block is implicitly include in the size field of the current block header.
+
+Expiclit free linked list, in this lab: have prev and next pointers, pointing to prev or next real free block. This list applies LIFO order(This order is very good, since we do not need to sort free block by their block address in the free list). There are actually a boundary tag for each block, which is the copy of the sizeAndTag header of this block.
+
+WORD_SIZE is 8 bytes here, depending on 32 or 64 bit system.
+
+SIZE() is a multiple of 8 byts.
+
+TAG_PRECEDING_USED tells where the previous block is being used. When the block is being used.
+
+For used block, it does not have next, prev and boundary tag.
+
+searchFreeList: find first safisfying free block.
+

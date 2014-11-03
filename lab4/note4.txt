@@ -1,0 +1,15 @@
+About cache:
+
+Chinese manual: http://zh.wikipedia.org/wiki/CPU%E7%BC%93%E5%AD%98
+
+
+cache size
+block size
+associability
+
+
+do not forget to use flush_cache()
+
+
+
+

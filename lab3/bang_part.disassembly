@@ -1,0 +1,14 @@
+
+bang_part.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:	48 be ae ac 9d 45 e7 	movabs $0x384e1de7459dacae,%rsi
+   7:	1d 4e 38 
+   a:	48 89 34 25 08 23 60 	mov    %rsi,0x602308
+  11:	00 
+  12:	48 c7 c3 20 10 40 00 	mov    $0x401020,%rbx
+  19:	53                   	push   %rbx
+  1a:	c3                   	retq   
